@@ -28,13 +28,12 @@ api-key=yoursecretkey
 
 ## Quick Start
 
-### Python (development)
+### Go (development)
 
 ```bash
 cp .env.example .env
 # edit .env – set PDNS_API_URL and PDNS_API_KEY
-pip install -r requirements.txt
-python main.py
+go run .
 ```
 
 Open <http://localhost:8080>
@@ -55,13 +54,12 @@ docker compose up -d
 | `PDNS_API_KEY`   | `changeme`                | Must match `api-key` in pdns.conf          |
 | `PDNS_SERVER_ID` | `localhost`               | PowerDNS server ID (almost always default) |
 | `PORT`           | `8080`                    | Port the UI listens on                     |
-| `DEBUG`          | `false`                   | Enable uvicorn auto-reload                 |
 
 ## Architecture
 
 ```
-browser  ──fetch──►  FastAPI (main.py)  ──httpx──►  PowerDNS API (:8081)
-                     serves static SPA              /api/v1/servers/…
+browser  ──fetch──►  Go HTTP server (main.go)  ──net/http──►  PowerDNS API (:8081)
+                     serves static SPA                         /api/v1/servers/…
 ```
 
-The FastAPI backend acts as an authenticated proxy so the PowerDNS API key is never exposed to the browser.
+The Go backend acts as an authenticated proxy so the PowerDNS API key is never exposed to the browser.
