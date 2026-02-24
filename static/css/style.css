@@ -1,0 +1,285 @@
+/* ===================================================
+   PowerDNS Web UI – global styles
+   =================================================== */
+
+/* ---- Layout ---- */
+*,
+*::before,
+*::after { box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  margin: 0;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background: #f0f2f5;
+  color: #212529;
+}
+
+.app-wrapper {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ---- Sidebar ---- */
+.sidebar {
+  width: 220px;
+  background: #1a2332;
+  color: #c8d4e3;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  overflow-y: auto;
+  transition: transform 0.25s ease;
+  z-index: 100;
+}
+
+.sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 1.1rem 1.25rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #fff;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.sidebar-brand .bi {
+  font-size: 1.3rem;
+}
+
+.sidebar-nav {
+  list-style: none;
+  padding: 0.5rem 0;
+  margin: 0;
+  flex: 1;
+}
+
+.sidebar-nav li a {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 1.25rem;
+  color: rgba(200, 212, 227, 0.75);
+  text-decoration: none;
+  font-size: 0.925rem;
+  border-left: 3px solid transparent;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.sidebar-nav li a .bi {
+  font-size: 1.05rem;
+  width: 1.25rem;
+  text-align: center;
+}
+
+.sidebar-nav li a:hover {
+  background: rgba(255,255,255,0.07);
+  color: #fff;
+}
+
+.sidebar-nav li a.active {
+  background: rgba(255,255,255,0.10);
+  color: #fff;
+  border-left-color: #0d6efd;
+}
+
+.sidebar-footer {
+  padding: 0.75rem 1.25rem;
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+
+/* Mobile sidebar toggle */
+@media (max-width: 991px) {
+  .sidebar {
+    position: fixed;
+    left: 0; top: 0; bottom: 0;
+    transform: translateX(-100%);
+  }
+  .sidebar.open {
+    transform: translateX(0);
+    box-shadow: 4px 0 16px rgba(0,0,0,0.25);
+  }
+}
+
+/* ---- Main area ---- */
+.main-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 0;
+}
+
+/* ---- Top bar ---- */
+.topbar {
+  background: #fff;
+  border-bottom: 1px solid #dee2e6;
+  padding: 0.6rem 1.5rem;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  min-height: 52px;
+}
+
+.topbar-breadcrumb {
+  font-size: 0.9rem;
+  color: #6c757d;
+}
+
+/* ---- Content area ---- */
+.content-area {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.5rem;
+}
+
+/* ---- Page header ---- */
+.page-header {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.page-header h2 {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: 600;
+}
+
+/* ---- Tables ---- */
+.table th {
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #6c757d;
+  white-space: nowrap;
+}
+
+.table td {
+  vertical-align: middle;
+}
+
+.table > tbody > tr:hover > td {
+  background: rgba(13, 110, 253, 0.03);
+}
+
+/* ---- Cards ---- */
+.card {
+  border: 1px solid #e0e4ea;
+  border-radius: 0.5rem;
+}
+
+.card-header {
+  background: #f8f9fb;
+  border-bottom: 1px solid #e0e4ea;
+  font-weight: 600;
+}
+
+/* ---- Zone / record type badges ---- */
+.badge-kind-native   { background: #6c757d; }
+.badge-kind-master   { background: #0d6efd; }
+.badge-kind-slave    { background: #0dcaf0; color: #000; }
+
+.badge-type {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 0.25em 0.5em;
+  border-radius: 0.3rem;
+  color: #fff;
+}
+
+.badge-type-A      { background: #0d6efd; }
+.badge-type-AAAA   { background: #0099cc; }
+.badge-type-CNAME  { background: #198754; }
+.badge-type-MX     { background: #fd7e14; }
+.badge-type-NS     { background: #6c757d; }
+.badge-type-TXT    { background: #343a40; }
+.badge-type-SOA    { background: #dc3545; }
+.badge-type-SRV    { background: #6f42c1; }
+.badge-type-PTR    { background: #d63384; }
+.badge-type-CAA    { background: #20c997; color: #000; }
+.badge-type-other  { background: #adb5bd; color: #000; }
+
+/* ---- Record content cells ---- */
+.record-content {
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: 0.82rem;
+  word-break: break-all;
+}
+
+.record-content .disabled-record {
+  text-decoration: line-through;
+  color: #adb5bd;
+}
+
+/* ---- Action buttons ---- */
+.btn-group-actions .btn {
+  padding: 0.25rem 0.5rem;
+}
+
+/* ---- Monospace inputs ---- */
+.font-monospace {
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: 0.875rem;
+}
+
+/* ---- Zone info mini stats ---- */
+.zone-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+}
+
+.zone-meta-item small {
+  display: block;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #6c757d;
+  margin-bottom: 0.1rem;
+}
+
+.zone-meta-item .value {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+/* ---- Empty state ---- */
+.empty-state {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: #6c757d;
+}
+
+.empty-state .bi {
+  font-size: 2.5rem;
+  display: block;
+  margin-bottom: 0.75rem;
+  opacity: 0.4;
+}
+
+/* ---- Settings table ---- */
+.settings-table td:first-child {
+  font-family: monospace;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  width: 1%;
+}
+
+/* ---- Notify badge ---- */
+.notify-result {
+  font-size: 0.8rem;
+}
+
+/* ---- Scrollbar (webkit) ---- */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.25); }

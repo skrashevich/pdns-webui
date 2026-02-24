@@ -1,0 +1,13 @@
+version: "3.9"
+
+services:
+  pdns-webui:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      PDNS_API_URL: http://pdns:8081   # change to your PowerDNS host
+      PDNS_API_KEY: changeme
+      PDNS_SERVER_ID: localhost
+      PORT: "8080"
+    restart: unless-stopped
