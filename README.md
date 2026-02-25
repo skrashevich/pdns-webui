@@ -5,6 +5,12 @@
 
 A lightweight web interface for managing **PowerDNS Authoritative Server 4.6** via its built-in HTTP API.
 
+## Security Warning
+
+> [!WARNING]
+> This web UI provides **no built-in authentication or authorization**.
+> Access restriction is entirely the **user/operator's responsibility** (for example: firewall rules, private network/VPN, reverse proxy auth).
+
 ## Features
 
 - **Zone management** – list, create, edit, delete authoritative zones (Native / Master / Slave)
