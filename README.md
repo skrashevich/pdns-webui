@@ -1,4 +1,4 @@
-![telegram-cloud-photo-size-2-5255818602324103738-y](https://github.com/user-attachments/assets/57ad42bd-fc9f-48cf-8582-f523e89ac946)
+<img width="2007" height="1015" alt="image" src="https://github.com/user-attachments/assets/6c8e402d-9bcb-4d67-a610-0ee5e99b6447" />
 
 
 # PowerDNS Web UI
