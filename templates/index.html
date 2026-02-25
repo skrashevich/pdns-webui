@@ -4,6 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>PowerDNS Web UI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Manrope:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <link rel="stylesheet"
         href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
         integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN"
@@ -14,15 +17,22 @@
   <link rel="stylesheet" href="/static/css/style.css" />
 </head>
 <body>
+<div class="ui-atmosphere" aria-hidden="true">
+  <span class="orb orb-a"></span>
+  <span class="orb orb-b"></span>
+  <span class="dot-grid"></span>
+</div>
 
 <div class="app-wrapper">
-
-  <!-- ===== Sidebar ===== -->
-  <nav class="sidebar" id="sidebar">
+  <nav class="sidebar" id="sidebar" aria-label="Sidebar navigation">
     <div class="sidebar-brand">
-      <i class="bi bi-shield-fill-check text-primary"></i>
-      <span>PowerDNS UI</span>
+      <span class="brand-mark"><i class="bi bi-shield-lock-fill"></i></span>
+      <div>
+        <span class="brand-title">PowerDNS Control</span>
+        <small class="brand-subtitle">authoritative deck</small>
+      </div>
     </div>
+
     <ul class="sidebar-nav">
       <li>
         <a href="#" data-view="zones" onclick="navigate('zones'); return false;">
@@ -35,46 +45,49 @@
         </a>
       </li>
     </ul>
+
     <div class="sidebar-footer">
-      <span class="text-muted small">pdns 4.6 &nbsp;·&nbsp; v1.0</span>
+      <span>pdns 4.6.2</span>
+      <span>ui 1.1</span>
     </div>
   </nav>
 
-  <!-- ===== Main area ===== -->
   <div class="main-area">
-
-    <!-- Top bar -->
     <header class="topbar">
-      <button class="btn btn-sm btn-outline-secondary d-lg-none me-2"
-              onclick="document.getElementById('sidebar').classList.toggle('open')">
-        <i class="bi bi-list"></i>
-      </button>
-      <span id="breadcrumb" class="topbar-breadcrumb"></span>
-      <div class="ms-auto d-flex align-items-center gap-3">
+      <div class="topbar-left">
+        <button class="btn btn-sm btn-outline-secondary d-lg-none"
+                onclick="document.getElementById('sidebar').classList.toggle('open')"
+                aria-label="Toggle sidebar">
+          <i class="bi bi-list"></i>
+        </button>
+        <span id="breadcrumb" class="topbar-breadcrumb"></span>
+      </div>
+
+      <div class="topbar-right">
         <span id="global-spinner"
-              class="spinner-border spinner-border-sm text-primary"
-              style="display:none" role="status"
+              class="spinner-border spinner-border-sm"
+              style="display:none"
+              role="status"
               aria-label="Loading"></span>
-        <span class="badge bg-primary-subtle text-primary-emphasis border border-primary-subtle">
-          PowerDNS 4.6
+        <span class="status-pill">
+          <i class="bi bi-check-circle-fill"></i>
+          API ready
         </span>
       </div>
     </header>
 
-    <!-- Page content -->
-    <div class="content-area" id="main-content">
-      <div class="d-flex justify-content-center align-items-center" style="height:60vh">
-        <div class="spinner-border text-primary"></div>
+    <section class="content-shell" aria-live="polite">
+      <div class="content-area" id="main-content">
+        <div class="d-flex justify-content-center align-items-center" style="height:60vh">
+          <div class="spinner-border"></div>
+        </div>
       </div>
-    </div>
+    </section>
+  </div>
+</div>
 
-  </div><!-- /main-area -->
-</div><!-- /app-wrapper -->
-
-<!-- ===== Toast container ===== -->
 <div id="toast-container" class="toast-container position-fixed bottom-0 end-0 p-3"></div>
 
-<!-- ===== Generic modal ===== -->
 <div class="modal fade" id="app-modal" tabindex="-1" aria-labelledby="modal-title">
   <div class="modal-dialog modal-lg modal-dialog-scrollable">
     <div class="modal-content">
@@ -91,7 +104,6 @@
   </div>
 </div>
 
-<!-- ===== Confirm modal ===== -->
 <div class="modal fade" id="confirm-modal" tabindex="-1">
   <div class="modal-dialog">
     <div class="modal-content">
@@ -108,7 +120,6 @@
   </div>
 </div>
 
-<!-- ===== Export modal ===== -->
 <div class="modal fade" id="export-modal" tabindex="-1">
   <div class="modal-dialog modal-xl modal-dialog-scrollable">
     <div class="modal-content">
@@ -117,8 +128,7 @@
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body p-0">
-        <pre id="export-content" class="m-0 p-3 bg-dark text-light"
-             style="font-size:0.8rem; white-space:pre; overflow-x:auto; max-height:70vh"></pre>
+        <pre id="export-content" class="m-0 p-3 export-pre"></pre>
       </div>
       <div class="modal-footer">
         <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
