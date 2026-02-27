@@ -3,7 +3,7 @@
 
 # PowerDNS Web UI
 
-A lightweight web interface for managing **PowerDNS Authoritative Server 4.6** via its built-in HTTP API.
+A lightweight web interface for managing **PowerDNS Authoritative Server 4.** via its built-in HTTP API.
 
 ## Security Warning
 
