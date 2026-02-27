@@ -6,6 +6,7 @@ import (
 	"embed"
 	"encoding/json"
 	"errors"
+	"flag"
 	"fmt"
 	"html/template"
 	"io"
@@ -40,8 +41,21 @@ var uiFS embed.FS
 
 var uiVersion = detectUIVersion()
 
+type listenConfig struct {
+	Host string
+	Port string
+}
+
 func main() {
 	loadDotEnv(".env")
+
+	listenCfg, err := parseListenConfig(os.Args[1:], os.Stdout)
+	if err != nil {
+		if errors.Is(err, flag.ErrHelp) {
+			return
+		}
+		log.Fatalf("failed to parse command line flags: %v", err)
+	}
 
 	indexTemplate, err := template.ParseFS(uiFS, "templates/index.html")
 	if err != nil {
@@ -62,13 +76,35 @@ func main() {
 	mux.HandleFunc("/api/pdns/", handlePDNSProxy(client))
 	mux.HandleFunc("/", handleIndex(indexTemplate))
 
-	port := getEnv("PORT", "8080")
-	addr := "0.0.0.0:" + port
+	addr := net.JoinHostPort(listenCfg.Host, listenCfg.Port)
 
 	log.Printf("PowerDNS Web UI listening on %s", addr)
 	if err := http.ListenAndServe(addr, mux); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		log.Fatalf("server error: %v", err)
 	}
+}
+
+func parseListenConfig(args []string, output io.Writer) (listenConfig, error) {
+	cfg := listenConfig{
+		Host: getEnv("HOST", "0.0.0.0"),
+		Port: getEnv("PORT", "8080"),
+	}
+
+	flags := flag.NewFlagSet("pdns-webui", flag.ContinueOnError)
+	flags.SetOutput(output)
+	flags.StringVar(&cfg.Host, "host", cfg.Host, "Host/interface to listen on")
+	flags.StringVar(&cfg.Port, "port", cfg.Port, "Port to listen on")
+	flags.Usage = func() {
+		fmt.Fprintf(output, "Usage: %s [options]\n\n", os.Args[0])
+		fmt.Fprintln(output, "Options:")
+		flags.PrintDefaults()
+	}
+
+	if err := flags.Parse(args); err != nil {
+		return listenConfig{}, err
+	}
+
+	return cfg, nil
 }
 
 func handleIndex(indexTemplate *template.Template) http.HandlerFunc {

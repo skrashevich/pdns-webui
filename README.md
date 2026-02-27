@@ -40,6 +40,8 @@ api-key=yoursecretkey
 cp .env.example .env
 # edit .env – set PDNS_API_URL and PDNS_API_KEY
 go run .
+# or override listen address via CLI flags:
+go run . -host 127.0.0.1 -port 8080
 ```
 
 Open <http://localhost:8080>
@@ -59,7 +61,14 @@ docker compose up -d
 | `PDNS_API_URL`   | `http://localhost:8081`   | PowerDNS API base URL                      |
 | `PDNS_API_KEY`   | `changeme`                | Must match `api-key` in pdns.conf          |
 | `PDNS_SERVER_ID` | `localhost`               | PowerDNS server ID (almost always default) |
+| `HOST`           | `0.0.0.0`                 | Host/interface the UI listens on           |
 | `PORT`           | `8080`                    | Port the UI listens on                     |
+
+### CLI flags
+
+- `-host` — host/interface to listen on (default from `HOST` env var)
+- `-port` — port to listen on (default from `PORT` env var)
+- `-h` — show help
 
 ## Architecture
 

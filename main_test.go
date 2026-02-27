@@ -1,8 +1,11 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
+	"flag"
 	"html/template"
 	"io"
 	"io/fs"
@@ -124,6 +127,79 @@ func TestGetEnv_EmptyValueReturnsFallback(t *testing.T) {
 	t.Setenv("EMPTY_KEY", "")
 	if got := getEnv("EMPTY_KEY", "default"); got != "default" {
 		t.Errorf("got %q, want %q", got, "default")
+	}
+}
+
+// ─── parseListenConfig ───────────────────────────────────────────────────────
+
+func TestParseListenConfig_DefaultsFromEnv(t *testing.T) {
+	t.Setenv("HOST", "127.0.0.1")
+	t.Setenv("PORT", "9090")
+
+	cfg, err := parseListenConfig(nil, io.Discard)
+	if err != nil {
+		t.Fatalf("parseListenConfig returned error: %v", err)
+	}
+
+	if cfg.Host != "127.0.0.1" {
+		t.Errorf("Host = %q, want %q", cfg.Host, "127.0.0.1")
+	}
+	if cfg.Port != "9090" {
+		t.Errorf("Port = %q, want %q", cfg.Port, "9090")
+	}
+}
+
+func TestParseListenConfig_UsesFallbackDefaults(t *testing.T) {
+	t.Setenv("HOST", "")
+	t.Setenv("PORT", "")
+
+	cfg, err := parseListenConfig(nil, io.Discard)
+	if err != nil {
+		t.Fatalf("parseListenConfig returned error: %v", err)
+	}
+
+	if cfg.Host != "0.0.0.0" {
+		t.Errorf("Host = %q, want %q", cfg.Host, "0.0.0.0")
+	}
+	if cfg.Port != "8080" {
+		t.Errorf("Port = %q, want %q", cfg.Port, "8080")
+	}
+}
+
+func TestParseListenConfig_FlagsOverrideEnv(t *testing.T) {
+	t.Setenv("HOST", "127.0.0.1")
+	t.Setenv("PORT", "9090")
+
+	cfg, err := parseListenConfig([]string{"-host", "0.0.0.0", "-port", "8181"}, io.Discard)
+	if err != nil {
+		t.Fatalf("parseListenConfig returned error: %v", err)
+	}
+
+	if cfg.Host != "0.0.0.0" {
+		t.Errorf("Host = %q, want %q", cfg.Host, "0.0.0.0")
+	}
+	if cfg.Port != "8181" {
+		t.Errorf("Port = %q, want %q", cfg.Port, "8181")
+	}
+}
+
+func TestParseListenConfig_Help(t *testing.T) {
+	var out bytes.Buffer
+
+	_, err := parseListenConfig([]string{"-h"}, &out)
+	if !errors.Is(err, flag.ErrHelp) {
+		t.Fatalf("error = %v, want %v", err, flag.ErrHelp)
+	}
+
+	help := out.String()
+	if !strings.Contains(help, "Usage:") {
+		t.Errorf("help output does not contain Usage header: %q", help)
+	}
+	if !strings.Contains(help, "-host") {
+		t.Errorf("help output does not contain -host flag: %q", help)
+	}
+	if !strings.Contains(help, "-port") {
+		t.Errorf("help output does not contain -port flag: %q", help)
 	}
 }
 
