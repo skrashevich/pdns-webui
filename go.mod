@@ -1,3 +1,3 @@
-module pdns-webui
+module github.com/skrashevich/pdns-webui
 
-go 1.22
+go 1.26
