@@ -211,6 +211,7 @@ a {
   display: grid;
   gap: 6px;
   flex: 1;
+  align-content: start;
 }
 
 .sidebar-nav a {
