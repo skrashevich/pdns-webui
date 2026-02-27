@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"runtime/debug"
 	"strings"
 	"syscall"
 	"time"
@@ -31,6 +32,8 @@ var allowedProxyMethods = map[string]bool{
 	http.MethodPatch:  true,
 	http.MethodDelete: true,
 }
+
+var uiVersion = detectUIVersion()
 
 func main() {
 	loadDotEnv(".env")
@@ -81,8 +84,46 @@ func handleAPIConfig(w http.ResponseWriter, r *http.Request) {
 
 	cfg := getPDNSConfig()
 	writeJSON(w, http.StatusOK, map[string]string{
-		"server_id": cfg.ServerID,
+		"server_id":  cfg.ServerID,
+		"ui_version": uiVersion,
 	})
+}
+
+func detectUIVersion() string {
+	buildInfo, ok := debug.ReadBuildInfo()
+	if !ok {
+		return "dev"
+	}
+
+	if buildInfo.Main.Version != "" && buildInfo.Main.Version != "(devel)" {
+		return buildInfo.Main.Version
+	}
+
+	revision := ""
+	modified := ""
+	for _, setting := range buildInfo.Settings {
+		switch setting.Key {
+		case "vcs.revision":
+			revision = setting.Value
+		case "vcs.modified":
+			modified = setting.Value
+		}
+	}
+
+	if revision == "" {
+		return "dev"
+	}
+
+	shortRevision := revision
+	if len(shortRevision) > 7 {
+		shortRevision = shortRevision[:7]
+	}
+
+	if modified == "true" {
+		return shortRevision + "-dirty"
+	}
+
+	return shortRevision
 }
 
 func handlePDNSProxy(client *http.Client) http.HandlerFunc {

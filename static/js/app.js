@@ -7,6 +7,8 @@
 // ---- State -------------------------------------------------------
 const state = {
   serverId: 'localhost',
+  uiVersion: 'n/a',
+  pdnsVersion: 'n/a',
   currentView: null,
   currentZone: null,   // full zone object when in records view
   zones: [],           // cached list for quick lookups
@@ -50,6 +52,7 @@ const http = {
 const pdns = {
   listZones:    ()        => http.get(`servers/${state.serverId}/zones`),
   getZone:      (id)      => http.get(`servers/${state.serverId}/zones/${enc(id)}`),
+  getServerInfo: ()       => http.get(`servers/${state.serverId}`),
   createZone:   (data)    => http.post(`servers/${state.serverId}/zones`, data),
   updateZone:   (id, d)   => http.put(`servers/${state.serverId}/zones/${enc(id)}`, d),
   deleteZone:   (id)      => http.del(`servers/${state.serverId}/zones/${enc(id)}`),
@@ -99,6 +102,25 @@ const ui = {
     document.getElementById('breadcrumb').innerHTML = html;
   },
 };
+
+function setFooterVersion(id, prefix, version) {
+  const el = document.getElementById(id);
+  if (!el) return;
+
+  const raw = version == null ? '' : String(version).trim();
+  el.textContent = `${prefix} ${raw || 'n/a'}`;
+}
+
+async function refreshPDNSVersion() {
+  try {
+    const info = await pdns.getServerInfo();
+    state.pdnsVersion = info?.version || info?.daemon_version || info?.packageversion || 'n/a';
+  } catch {
+    state.pdnsVersion = 'n/a';
+  }
+
+  setFooterVersion('pdns-version', 'pdns', state.pdnsVersion);
+}
 
 // ---- Utility functions -------------------------------------------
 function esc(s) {
@@ -935,9 +957,15 @@ async function init() {
   try {
     const cfg = await fetch('/api/config').then(r => r.json());
     state.serverId = cfg.server_id || 'localhost';
+    state.uiVersion = cfg.ui_version || 'n/a';
   } catch (e) {
     console.warn('Could not fetch server config:', e);
   }
+
+  setFooterVersion('ui-version', 'ui', state.uiVersion);
+  setFooterVersion('pdns-version', 'pdns', 'loading...');
+  void refreshPDNSVersion();
+
   navigate('zones');
 }
 
