@@ -19,8 +19,6 @@ WORKDIR /app
 RUN adduser -D -H -s /sbin/nologin appuser
 
 COPY --from=builder /out/pdns-webui /app/pdns-webui
-COPY static /app/static
-COPY templates /app/templates
 
 USER appuser
 

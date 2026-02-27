@@ -3,11 +3,13 @@ package main
 import (
 	"bytes"
 	"context"
+	"embed"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"html/template"
 	"io"
+	"io/fs"
 	"log"
 	"net"
 	"net/http"
@@ -33,20 +35,28 @@ var allowedProxyMethods = map[string]bool{
 	http.MethodDelete: true,
 }
 
+//go:embed templates static
+var uiFS embed.FS
+
 var uiVersion = detectUIVersion()
 
 func main() {
 	loadDotEnv(".env")
 
-	indexTemplate, err := template.ParseFiles("templates/index.html")
+	indexTemplate, err := template.ParseFS(uiFS, "templates/index.html")
 	if err != nil {
 		log.Fatalf("failed to parse template: %v", err)
+	}
+
+	staticFS, err := fs.Sub(uiFS, "static")
+	if err != nil {
+		log.Fatalf("failed to create static filesystem: %v", err)
 	}
 
 	client := &http.Client{Timeout: 30 * time.Second}
 
 	mux := http.NewServeMux()
-	mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
+	mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.FS(staticFS))))
 	mux.HandleFunc("/api/config", handleAPIConfig)
 	mux.HandleFunc("/api/pdns", handlePDNSProxy(client))
 	mux.HandleFunc("/api/pdns/", handlePDNSProxy(client))
