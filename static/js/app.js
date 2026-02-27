@@ -763,7 +763,7 @@ const views = {
       <div class="card shadow-sm">
         <div class="card-header">About</div>
         <div class="card-body text-muted small">
-          PowerDNS Web UI v1.0.0 &nbsp;·&nbsp; Targets PowerDNS Authoritative 4.6
+          PowerDNS Web UI ${esc(state.uiVersion)} &nbsp;·&nbsp; PowerDNS ${esc(state.pdnsVersion)}
         </div>
       </div>`);
 
