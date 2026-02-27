@@ -280,15 +280,15 @@ func loadDotEnv(path string) {
 		return
 	}
 
-	lines := strings.Split(string(data), "\n")
-	for _, rawLine := range lines {
+	lines := strings.SplitSeq(string(data), "\n")
+	for rawLine := range lines {
 		line := strings.TrimSpace(rawLine)
 		if line == "" || strings.HasPrefix(line, "#") {
 			continue
 		}
 
-		if strings.HasPrefix(line, "export ") {
-			line = strings.TrimSpace(strings.TrimPrefix(line, "export "))
+		if after, ok := strings.CutPrefix(line, "export "); ok {
+			line = strings.TrimSpace(after)
 		}
 
 		parts := strings.SplitN(line, "=", 2)
