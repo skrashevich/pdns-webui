@@ -13,6 +13,8 @@ const state = {
   currentZone: null,   // full zone object when in records view
   zones: [],           // cached list for quick lookups
   rrsets: [],          // rrsets for current zone
+  selectedZones: new Set(),
+  selectedRecords: new Set(),
 };
 
 // ---- HTTP helpers ------------------------------------------------
@@ -50,15 +52,18 @@ const http = {
 
 // ---- PowerDNS API wrappers ---------------------------------------
 const pdns = {
-  listZones:    ()        => http.get(`servers/${state.serverId}/zones`),
-  getZone:      (id)      => http.get(`servers/${state.serverId}/zones/${enc(id)}`),
-  getServerInfo: ()       => http.get(`servers/${state.serverId}`),
-  createZone:   (data)    => http.post(`servers/${state.serverId}/zones`, data),
-  updateZone:   (id, d)   => http.put(`servers/${state.serverId}/zones/${enc(id)}`, d),
-  deleteZone:   (id)      => http.del(`servers/${state.serverId}/zones/${enc(id)}`),
-  notifyZone:   (id)      => http.put(`servers/${state.serverId}/zones/${enc(id)}/notify`),
-  exportZone:   (id)      => http.get(`servers/${state.serverId}/zones/${enc(id)}/export`),
-  updateRRsets: (id, rrs) => http.patch(`servers/${state.serverId}/zones/${enc(id)}`, { rrsets: rrs }),
+  listZones:     ()        => http.get(`servers/${state.serverId}/zones`),
+  getZone:       (id)      => http.get(`servers/${state.serverId}/zones/${enc(id)}`),
+  getServerInfo: ()        => http.get(`servers/${state.serverId}`),
+  createZone:    (data)    => http.post(`servers/${state.serverId}/zones`, data),
+  updateZone:    (id, d)   => http.put(`servers/${state.serverId}/zones/${enc(id)}`, d),
+  deleteZone:    (id)      => http.del(`servers/${state.serverId}/zones/${enc(id)}`),
+  notifyZone:    (id)      => http.put(`servers/${state.serverId}/zones/${enc(id)}/notify`),
+  exportZone:    (id)      => http.get(`servers/${state.serverId}/zones/${enc(id)}/export`),
+  updateRRsets:  (id, rrs) => http.patch(`servers/${state.serverId}/zones/${enc(id)}`, { rrsets: rrs }),
+  searchData:    (q)       => http.get(`servers/${state.serverId}/search-data?q=${encodeURIComponent(q)}&max=100&object_type=record`),
+  axfrRetrieve:  (id)      => http.put(`servers/${state.serverId}/zones/${enc(id)}/axfr-retrieve`),
+  getStatistics: ()        => http.get(`servers/${state.serverId}/statistics`),
 };
 
 // Encode zone IDs for use in URL paths
@@ -241,11 +246,103 @@ function typeBadge(type) {
   return `<span class="badge-type ${cls}">${esc(type)}</span>`;
 }
 
+function formatUptime(seconds) {
+  const s = parseInt(seconds) || 0;
+  const d = Math.floor(s / 86400);
+  const h = Math.floor((s % 86400) / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  if (d > 0) return `${d}d ${h}h ${m}m`;
+  if (h > 0) return `${h}h ${m}m`;
+  return `${m}m ${s % 60}s`;
+}
+
+// ---- Checkbox helpers --------------------------------------------
+function onZoneCheckboxChange() {
+  state.selectedZones = new Set(
+    [...document.querySelectorAll('.zone-select:checked')].map(el => el.value)
+  );
+  const selectAll = document.getElementById('select-all-zones');
+  const allBoxes = document.querySelectorAll('.zone-select');
+  if (selectAll) {
+    selectAll.checked = allBoxes.length > 0 && state.selectedZones.size === allBoxes.length;
+    selectAll.indeterminate = state.selectedZones.size > 0 && state.selectedZones.size < allBoxes.length;
+  }
+  const btn = document.getElementById('bulk-delete-zones-btn');
+  if (btn) btn.style.display = state.selectedZones.size > 0 ? '' : 'none';
+}
+
+function onRecordCheckboxChange() {
+  state.selectedRecords = new Set(
+    [...document.querySelectorAll('.record-select:checked')].map(el => el.value)
+  );
+  const selectAll = document.getElementById('select-all-records');
+  const allBoxes = document.querySelectorAll('.record-select:not(:disabled)');
+  if (selectAll) {
+    selectAll.checked = allBoxes.length > 0 && state.selectedRecords.size === allBoxes.length;
+    selectAll.indeterminate = state.selectedRecords.size > 0 && state.selectedRecords.size < allBoxes.length;
+  }
+  const btn = document.getElementById('bulk-delete-records-btn');
+  if (btn) btn.style.display = state.selectedRecords.size > 0 ? '' : 'none';
+}
+
+// ---- Statistics loader -------------------------------------------
+async function loadStats() {
+  const el = document.getElementById('stats-content');
+  if (!el) return;
+  try {
+    const raw = await pdns.getStatistics();
+    const map = {};
+    (raw || []).forEach(item => { if (item.type === 'StatisticItem') map[item.name] = item.value; });
+
+    const groups = [
+      { title: 'Queries', icon: 'bi-question-circle', metrics: [
+        { key: 'udp-queries',  label: 'UDP Queries' },
+        { key: 'tcp-queries',  label: 'TCP Queries' },
+        { key: 'udp6-queries', label: 'UDP6 Queries' },
+        { key: 'tcp6-queries', label: 'TCP6 Queries' },
+      ]},
+      { title: 'Cache', icon: 'bi-lightning', metrics: [
+        { key: 'cache-hits',       label: 'Cache Hits' },
+        { key: 'cache-misses',     label: 'Cache Misses' },
+        { key: 'packetcache-hit',  label: 'Packet Cache Hits' },
+        { key: 'packetcache-miss', label: 'Packet Cache Misses' },
+      ]},
+      { title: 'Errors', icon: 'bi-exclamation-triangle', metrics: [
+        { key: 'servfail-packets', label: 'SERVFAIL' },
+        { key: 'timedout-packets', label: 'Timed Out' },
+      ]},
+      { title: 'System', icon: 'bi-cpu', metrics: [
+        { key: 'uptime',            label: 'Uptime',           format: formatUptime },
+        { key: 'real-memory-usage', label: 'Memory',           format: v => `${Math.round(parseInt(v) / 1024 / 1024)} MB` },
+        { key: 'fd-usage',          label: 'File Descriptors' },
+      ]},
+    ];
+
+    el.innerHTML = groups.map(g => `
+      <div class="mb-4">
+        <h6 class="text-muted mb-2"><i class="bi ${esc(g.icon)} me-1"></i>${esc(g.title)}</h6>
+        <div class="stats-grid">
+          ${g.metrics.map(m => {
+            const rawVal = map[m.key];
+            const val = rawVal == null ? '—' : (m.format ? m.format(rawVal) : rawVal);
+            return `<div class="stat-card">
+              <div class="stat-value">${esc(String(val))}</div>
+              <div class="stat-label">${esc(m.label)}</div>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>`).join('');
+  } catch (err) {
+    el.innerHTML = `<div class="alert alert-danger">${esc(err.message)}</div>`;
+  }
+}
+
 // ---- Views -------------------------------------------------------
 const views = {
 
   // ----- Zones list -----
   async zones() {
+    state.selectedZones = new Set();
     ui.setBreadcrumb('Zones');
     ui.setContent(`<div class="d-flex justify-content-center align-items-center" style="height:50vh">
       <div class="spinner-border text-primary"></div></div>`);
@@ -260,6 +357,10 @@ const views = {
             .sort((a, b) => a.name.localeCompare(b.name))
             .map((z, i) => `
           <tr>
+            <td style="width:1%">
+              <input type="checkbox" class="form-check-input zone-select" value="${esc(z.id)}"
+                onchange="onZoneCheckboxChange()">
+            </td>
             <td>
               <a href="#" class="fw-medium text-decoration-none"
                  onclick="navigate('records','${esc(z.id)}');return false;">
@@ -280,6 +381,11 @@ const views = {
                   onclick="handlers.notifyZone(${i})">
                   <i class="bi bi-broadcast"></i>
                 </button>` : ''}
+                ${z.kind === 'Slave' ? `
+                <button class="btn btn-outline-secondary" title="Retrieve from master (AXFR)"
+                  onclick="handlers.axfrRetrieve(${i})">
+                  <i class="bi bi-cloud-download"></i>
+                </button>` : ''}
                 <button class="btn btn-outline-secondary" title="Export zone"
                   onclick="handlers.exportZone(${i})">
                   <i class="bi bi-download"></i>
@@ -296,7 +402,7 @@ const views = {
             </td>
           </tr>`)
             .join('')
-        : `<tr><td colspan="5">
+        : `<tr><td colspan="6">
             <div class="empty-state">
               <i class="bi bi-inbox"></i>
               No zones found. Create your first zone to get started.
@@ -306,7 +412,11 @@ const views = {
         <div class="page-header">
           <h2><i class="bi bi-globe2 me-2 text-primary"></i>Zones</h2>
           <span class="badge bg-secondary ms-1">${state.zones.length}</span>
-          <div class="ms-auto">
+          <div class="ms-auto d-flex gap-2">
+            <button class="btn btn-outline-danger" id="bulk-delete-zones-btn" style="display:none"
+              onclick="handlers.bulkDeleteZones()">
+              <i class="bi bi-trash me-1"></i>Delete Selected
+            </button>
             <button class="btn btn-primary" onclick="handlers.showZoneCreate()">
               <i class="bi bi-plus-lg me-1"></i>Add Zone
             </button>
@@ -317,6 +427,10 @@ const views = {
             <table class="table table-hover align-middle mb-0">
               <thead class="table-light">
                 <tr>
+                  <th style="width:1%">
+                    <input type="checkbox" id="select-all-zones" class="form-check-input"
+                      onchange="document.querySelectorAll('.zone-select').forEach(cb=>cb.checked=this.checked);onZoneCheckboxChange()">
+                  </th>
                   <th>Zone Name</th>
                   <th>Type</th>
                   <th>Serial</th>
@@ -343,6 +457,7 @@ const views = {
 
   // ----- Zone records -----
   async records(zoneId) {
+    state.selectedRecords = new Set();
     ui.setBreadcrumb(`<a href="#" onclick="navigate('zones');return false;">Zones</a> / Loading…`);
     ui.setContent(`<div class="d-flex justify-content-center align-items-center" style="height:50vh">
       <div class="spinner-border text-primary"></div></div>`);
@@ -364,12 +479,17 @@ const views = {
 
       const rows = rrsets.length
         ? rrsets.map((rr, i) => {
-            const relN = relativeName(rr.name, zone.name);
+            const relN  = relativeName(rr.name, zone.name);
+            const rrKey = `${rr.name}|${rr.type}`;
             const content = (rr.records || [])
               .map(r => `<div class="record-content ${r.disabled ? 'disabled-record' : ''}">${esc(r.content)}</div>`)
               .join('');
             return `
           <tr>
+            <td style="width:1%">
+              <input type="checkbox" class="form-check-input record-select" value="${esc(rrKey)}"
+                onchange="onRecordCheckboxChange()"${rr.type === 'SOA' ? ' disabled' : ''}>
+            </td>
             <td class="font-monospace">${esc(relN)}</td>
             <td>${typeBadge(rr.type)}</td>
             <td>${esc(rr.ttl)}</td>
@@ -389,12 +509,17 @@ const views = {
             </td>
           </tr>`;
           }).join('')
-        : `<tr><td colspan="5"><div class="empty-state">
+        : `<tr><td colspan="6"><div class="empty-state">
             <i class="bi bi-inbox"></i>No records in this zone.</div></td></tr>`;
 
       const notifyBtn = (zone.kind === 'Master' || zone.kind === 'Native') ? `
         <button class="btn btn-outline-warning" onclick="handlers.notifyCurrentZone()" title="Send NOTIFY to slaves">
           <i class="bi bi-broadcast me-1"></i>Notify Slaves
+        </button>` : '';
+
+      const axfrBtn = zone.kind === 'Slave' ? `
+        <button class="btn btn-outline-secondary" onclick="handlers.axfrRetrieveCurrentZone()" title="Retrieve zone from master">
+          <i class="bi bi-cloud-download me-1"></i>Retrieve
         </button>` : '';
 
       ui.setContent(`
@@ -406,6 +531,11 @@ const views = {
           <span class="ms-2">${kindBadge(zone.kind)}</span>
           <div class="ms-auto d-flex gap-2">
             ${notifyBtn}
+            ${axfrBtn}
+            <button class="btn btn-outline-danger" id="bulk-delete-records-btn" style="display:none"
+              onclick="handlers.bulkDeleteRecords()">
+              <i class="bi bi-trash me-1"></i>Delete Selected
+            </button>
             <button class="btn btn-outline-secondary" onclick="handlers.exportCurrentZone()" title="Export zone file">
               <i class="bi bi-download me-1"></i>Export
             </button>
@@ -448,6 +578,10 @@ const views = {
             <table class="table table-hover align-middle mb-0">
               <thead class="table-light">
                 <tr>
+                  <th style="width:1%">
+                    <input type="checkbox" id="select-all-records" class="form-check-input"
+                      onchange="document.querySelectorAll('.record-select:not(:disabled)').forEach(cb=>cb.checked=this.checked);onRecordCheckboxChange()">
+                  </th>
                   <th>Name</th><th>Type</th><th>TTL</th><th>Content</th><th>Actions</th>
                 </tr>
               </thead>
@@ -467,6 +601,47 @@ const views = {
           </div>
         </div>`);
     }
+  },
+
+  // ----- Search -----
+  search() {
+    ui.setBreadcrumb('Search');
+    ui.setContent(`
+      <div class="page-header">
+        <h2><i class="bi bi-search me-2 text-primary"></i>Search</h2>
+      </div>
+      <div class="card shadow-sm mb-3">
+        <div class="card-body">
+          <div class="input-group">
+            <input type="text" class="form-control" id="search-input" placeholder="Search records…"
+              onkeydown="if(event.key==='Enter') handlers.runSearch()">
+            <button class="btn btn-primary" onclick="handlers.runSearch()">
+              <i class="bi bi-search me-1"></i>Search
+            </button>
+          </div>
+        </div>
+      </div>
+      <div id="search-results"></div>`);
+  },
+
+  // ----- Statistics -----
+  async statistics() {
+    ui.setBreadcrumb('Statistics');
+    ui.setContent(`
+      <div class="page-header">
+        <h2><i class="bi bi-bar-chart-line me-2 text-primary"></i>Statistics</h2>
+        <div class="ms-auto">
+          <button class="btn btn-outline-secondary" onclick="handlers.refreshStats()">
+            <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+          </button>
+        </div>
+      </div>
+      <div id="stats-content">
+        <div class="d-flex justify-content-center align-items-center" style="height:40vh">
+          <div class="spinner-border text-primary"></div>
+        </div>
+      </div>`);
+    await loadStats();
   },
 
   // ----- Settings -----
@@ -549,6 +724,17 @@ const handlers = {
     } finally { ui.setLoading(false); }
   },
 
+  async axfrRetrieve(idx) {
+    const z = state.zones[idx];
+    ui.setLoading(true);
+    try {
+      await pdns.axfrRetrieve(z.id);
+      ui.showToast(`AXFR retrieve started for ${stripDot(z.name)}`, 'success');
+    } catch (err) {
+      ui.showToast(`AXFR failed: ${err.message}`, 'danger');
+    } finally { ui.setLoading(false); }
+  },
+
   async exportZone(idx) {
     const z = state.zones[idx];
     await doExport(z.id, z.name);
@@ -589,6 +775,27 @@ const handlers = {
     );
   },
 
+  bulkDeleteZones() {
+    const count = state.selectedZones.size;
+    if (!count) return;
+    showConfirm(
+      `Delete ${count} Zone${count > 1 ? 's' : ''}`,
+      `Permanently delete <strong>${count}</strong> zone${count > 1 ? 's' : ''} and all their records? This cannot be undone.`,
+      async () => {
+        ui.setLoading(true);
+        const ids = [...state.selectedZones];
+        let failed = 0;
+        for (const id of ids) {
+          try { await pdns.deleteZone(id); } catch { failed++; }
+        }
+        ui.setLoading(false);
+        if (failed) ui.showToast(`Deleted ${ids.length - failed} zones, ${failed} failed`, 'warning');
+        else ui.showToast(`Deleted ${ids.length} zone${ids.length > 1 ? 's' : ''}`, 'success');
+        navigate('zones');
+      }
+    );
+  },
+
   // === Records view actions ===
   async notifyCurrentZone() {
     const z = state.currentZone;
@@ -598,6 +805,17 @@ const handlers = {
       ui.showToast(`NOTIFY sent for ${stripDot(z.name)}`, 'success');
     } catch (err) {
       ui.showToast(`Notify failed: ${err.message}`, 'danger');
+    } finally { ui.setLoading(false); }
+  },
+
+  async axfrRetrieveCurrentZone() {
+    const z = state.currentZone;
+    ui.setLoading(true);
+    try {
+      await pdns.axfrRetrieve(z.id);
+      ui.showToast(`AXFR retrieve started for ${stripDot(z.name)}`, 'success');
+    } catch (err) {
+      ui.showToast(`AXFR failed: ${err.message}`, 'danger');
     } finally { ui.setLoading(false); }
   },
 
@@ -633,6 +851,73 @@ const handlers = {
       }
     );
   },
+
+  bulkDeleteRecords() {
+    const count = state.selectedRecords.size;
+    if (!count) return;
+    const zone = state.currentZone;
+    showConfirm(
+      `Delete ${count} Record${count > 1 ? 's' : ''}`,
+      `Delete <strong>${count}</strong> selected record${count > 1 ? 's' : ''}?`,
+      async () => {
+        ui.setLoading(true);
+        try {
+          const rrsets = [...state.selectedRecords].map(key => {
+            const sep = key.lastIndexOf('|');
+            return { name: key.slice(0, sep), type: key.slice(sep + 1), changetype: 'DELETE' };
+          });
+          await pdns.updateRRsets(zone.id, rrsets);
+          ui.showToast(`Deleted ${count} record${count > 1 ? 's' : ''}`, 'success');
+          navigate('records', zone.id);
+        } catch (err) {
+          ui.showToast(`Delete failed: ${err.message}`, 'danger');
+        } finally { ui.setLoading(false); }
+      }
+    );
+  },
+
+  // === Search ===
+  async runSearch() {
+    const q = document.getElementById('search-input')?.value?.trim();
+    if (!q) return;
+    const el = document.getElementById('search-results');
+    if (!el) return;
+    el.innerHTML = `<div class="d-flex justify-content-center py-4"><div class="spinner-border text-primary"></div></div>`;
+    try {
+      const results = await pdns.searchData(q);
+      if (!results || results.length === 0) {
+        el.innerHTML = `<div class="empty-state"><i class="bi bi-inbox"></i>No results found for &ldquo;${esc(q)}&rdquo;</div>`;
+        return;
+      }
+      const rows = results.map(r => `
+        <tr>
+          <td class="font-monospace">${esc(r.name || '—')}</td>
+          <td>${typeBadge(r.type || '')}</td>
+          <td class="font-monospace small">${esc(r.content || '—')}</td>
+          <td>
+            <a href="#" onclick="navigate('records','${esc(r.zone_id || r.zone)}');return false;">
+              ${esc(stripDot(r.zone || '—'))}
+            </a>
+          </td>
+        </tr>`).join('');
+      el.innerHTML = `
+        <div class="card shadow-sm">
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+              <thead class="table-light">
+                <tr><th>Name</th><th>Type</th><th>Content</th><th>Zone</th></tr>
+              </thead>
+              <tbody>${rows}</tbody>
+            </table>
+          </div>
+        </div>`;
+    } catch (err) {
+      el.innerHTML = `<div class="alert alert-danger">${esc(err.message)}</div>`;
+    }
+  },
+
+  // === Statistics ===
+  refreshStats: () => loadStats(),
 };
 
 // ---- Export helper -----------------------------------------------
@@ -1021,10 +1306,12 @@ function navigate(view, param) {
   });
 
   switch (view) {
-    case 'zones':    views.zones();           break;
-    case 'records':  views.records(param);    break;
-    case 'settings': views.settings();        break;
-    default:         views.zones();
+    case 'zones':      views.zones();           break;
+    case 'records':    views.records(param);    break;
+    case 'search':     views.search();          break;
+    case 'statistics': views.statistics();      break;
+    case 'settings':   views.settings();        break;
+    default:           views.zones();
   }
 }
 
