@@ -122,6 +122,82 @@ async function refreshPDNSVersion() {
   setFooterVersion('pdns-version', 'pdns', state.pdnsVersion);
 }
 
+// ---- Theme --------------------------------------------------------
+const theme = {
+  storageKey: 'pdns-ui-theme',
+  mediaQuery: null,
+  current: 'light',
+
+  readStored() {
+    try {
+      const stored = localStorage.getItem(this.storageKey);
+      return stored === 'light' || stored === 'dark' ? stored : null;
+    } catch {
+      return null;
+    }
+  },
+
+  save(value) {
+    try {
+      localStorage.setItem(this.storageKey, value);
+    } catch {
+      // Ignore storage failures (private mode or blocked storage).
+    }
+  },
+
+  apply(value) {
+    this.current = value === 'dark' ? 'dark' : 'light';
+    document.documentElement.setAttribute('data-theme', this.current);
+    document.documentElement.setAttribute('data-bs-theme', this.current);
+    this.updateToggleButton();
+  },
+
+  updateToggleButton() {
+    const icon = document.getElementById('theme-toggle-icon');
+    const btn = document.getElementById('theme-toggle-btn');
+    if (!icon || !btn) return;
+
+    if (this.current === 'dark') {
+      icon.className = 'bi bi-sun-fill';
+      btn.setAttribute('title', 'Light mode');
+      btn.setAttribute('aria-label', 'Switch to light mode');
+      return;
+    }
+
+    icon.className = 'bi bi-moon-stars-fill';
+    btn.setAttribute('title', 'Night mode');
+    btn.setAttribute('aria-label', 'Switch to night mode');
+  },
+
+  init() {
+    this.mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const stored = this.readStored();
+    const initial = stored || (this.mediaQuery.matches ? 'dark' : 'light');
+    this.apply(initial);
+
+    const onChange = (event) => {
+      if (this.readStored()) return;
+      this.apply(event.matches ? 'dark' : 'light');
+    };
+
+    if (typeof this.mediaQuery.addEventListener === 'function') {
+      this.mediaQuery.addEventListener('change', onChange);
+    } else if (typeof this.mediaQuery.addListener === 'function') {
+      this.mediaQuery.addListener(onChange);
+    }
+  },
+
+  toggle() {
+    const next = this.current === 'dark' ? 'light' : 'dark';
+    this.save(next);
+    this.apply(next);
+  },
+};
+
+function toggleTheme() {
+  theme.toggle();
+}
+
 // ---- Utility functions -------------------------------------------
 function esc(s) {
   if (s == null) return '';
@@ -954,6 +1030,8 @@ function navigate(view, param) {
 
 // ---- Init --------------------------------------------------------
 async function init() {
+  theme.init();
+
   try {
     const cfg = await fetch('/api/config').then(r => r.json());
     state.serverId = cfg.server_id || 'localhost';

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light" data-bs-theme="light">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -64,6 +64,14 @@
       </div>
 
       <div class="topbar-right">
+        <button id="theme-toggle-btn"
+                class="btn btn-sm btn-outline-secondary theme-toggle-btn"
+                type="button"
+                onclick="toggleTheme()"
+                aria-label="Toggle night mode"
+                title="Night mode">
+          <i id="theme-toggle-icon" class="bi bi-moon-stars-fill" aria-hidden="true"></i>
+        </button>
         <span id="global-spinner"
               class="spinner-border spinner-border-sm"
               style="display:none"
