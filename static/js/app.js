@@ -15,6 +15,7 @@ const state = {
   rrsets: [],          // rrsets for current zone
   selectedZones: new Set(),
   selectedRecords: new Set(),
+  autoprimaries: [],
 };
 
 // ---- HTTP helpers ------------------------------------------------
@@ -61,9 +62,15 @@ const pdns = {
   notifyZone:    (id)      => http.put(`servers/${state.serverId}/zones/${enc(id)}/notify`),
   exportZone:    (id)      => http.get(`servers/${state.serverId}/zones/${enc(id)}/export`),
   updateRRsets:  (id, rrs) => http.patch(`servers/${state.serverId}/zones/${enc(id)}`, { rrsets: rrs }),
-  searchData:    (q)       => http.get(`servers/${state.serverId}/search-data?q=${encodeURIComponent(q)}&max=100&object_type=record`),
-  axfrRetrieve:  (id)      => http.put(`servers/${state.serverId}/zones/${enc(id)}/axfr-retrieve`),
-  getStatistics: ()        => http.get(`servers/${state.serverId}/statistics`),
+  searchData:       (q)          => http.get(`servers/${state.serverId}/search-data?q=${encodeURIComponent(q)}&max=100&object_type=record`),
+  axfrRetrieve:     (id)         => http.put(`servers/${state.serverId}/zones/${enc(id)}/axfr-retrieve`),
+  getStatistics:    ()           => http.get(`servers/${state.serverId}/statistics`),
+  getZoneMetadata:  (id)         => http.get(`servers/${state.serverId}/zones/${enc(id)}/metadata`),
+  setZoneMeta:      (id, k, v)   => http.put(`servers/${state.serverId}/zones/${enc(id)}/metadata/${encodeURIComponent(k)}`, { kind: k, metadata: v }),
+  deleteZoneMeta:   (id, k)      => http.del(`servers/${state.serverId}/zones/${enc(id)}/metadata/${encodeURIComponent(k)}`),
+  listAutoprimaries:  ()         => http.get(`servers/${state.serverId}/autoprimaries`),
+  createAutoprimary:  (data)     => http.post(`servers/${state.serverId}/autoprimaries`, data),
+  deleteAutoprimary:  (ip, ns)   => http.del(`servers/${state.serverId}/autoprimaries/${encodeURIComponent(ip)}/${encodeURIComponent(ns)}`),
 };
 
 // Encode zone IDs for use in URL paths
@@ -536,6 +543,9 @@ const views = {
               onclick="handlers.bulkDeleteRecords()">
               <i class="bi bi-trash me-1"></i>Delete Selected
             </button>
+            <button class="btn btn-outline-secondary" onclick="handlers.showZoneMetadata()" title="Zone metadata">
+              <i class="bi bi-sliders me-1"></i>Metadata
+            </button>
             <button class="btn btn-outline-secondary" onclick="handlers.exportCurrentZone()" title="Export zone file">
               <i class="bi bi-download me-1"></i>Export
             </button>
@@ -599,6 +609,73 @@ const views = {
               <i class="bi bi-arrow-left me-1"></i>Back to Zones
             </button>
           </div>
+        </div>`);
+    }
+  },
+
+  // ----- Autoprimaries -----
+  async autoprimaries() {
+    ui.setBreadcrumb('Autoprimaries');
+    ui.setContent(`<div class="d-flex justify-content-center align-items-center" style="height:50vh">
+      <div class="spinner-border text-primary"></div></div>`);
+    ui.setLoading(true);
+    try {
+      const list = await pdns.listAutoprimaries();
+      state.autoprimaries = list || [];
+      ui.setLoading(false);
+
+      const rows = state.autoprimaries.length
+        ? state.autoprimaries.map((a, i) => `
+          <tr>
+            <td class="font-monospace">${esc(a.ip)}</td>
+            <td class="font-monospace">${esc(a.nameserver)}</td>
+            <td>${esc(a.account || '—')}</td>
+            <td>
+              <button class="btn btn-sm btn-outline-danger" onclick="handlers.deleteAutoprimary(${i})" title="Delete">
+                <i class="bi bi-trash"></i>
+              </button>
+            </td>
+          </tr>`).join('')
+        : `<tr><td colspan="4"><div class="empty-state">
+            <i class="bi bi-inbox"></i>No autoprimaries configured.</div></td></tr>`;
+
+      ui.setContent(`
+        <div class="page-header">
+          <h2><i class="bi bi-hdd-network me-2 text-primary"></i>Autoprimaries</h2>
+          <div class="ms-auto">
+            <button class="btn btn-primary" onclick="handlers.showAutoprimaryCreate()">
+              <i class="bi bi-plus-lg me-1"></i>Add Autoprimary
+            </button>
+          </div>
+        </div>
+        <div class="card shadow-sm mb-3">
+          <div class="card-body text-muted small">
+            Autoprimaries allow PowerDNS to automatically create secondary zones when it
+            receives a NOTIFY from a trusted primary. The nameserver must match the NS record
+            as seen in the zone from the primary.
+          </div>
+        </div>
+        <div class="card shadow-sm">
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>IP Address</th>
+                  <th>Nameserver</th>
+                  <th>Account</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>${rows}</tbody>
+            </table>
+          </div>
+        </div>`);
+    } catch (err) {
+      ui.setLoading(false);
+      ui.setContent(`
+        <div class="alert alert-danger shadow-sm">
+          <h5 class="alert-heading"><i class="bi bi-exclamation-triangle me-2"></i>Error</h5>
+          <p>${esc(err.message)}</p>
         </div>`);
     }
   },
@@ -918,6 +995,117 @@ const handlers = {
 
   // === Statistics ===
   refreshStats: () => loadStats(),
+
+  // === Zone Metadata ===
+  async showZoneMetadata() {
+    const zone = state.currentZone;
+    document.getElementById('modal-title').textContent = `Metadata – ${stripDot(zone.name)}`;
+    document.getElementById('modal-body').innerHTML = `
+      <div class="d-flex justify-content-center py-3">
+        <div class="spinner-border text-primary"></div>
+      </div>`;
+    document.getElementById('modal-save-btn').textContent = 'Save Metadata';
+    document.getElementById('modal-save-btn').onclick = () => saveZoneMetadata();
+    new bootstrap.Modal(document.getElementById('app-modal')).show();
+
+    try {
+      const metaList = await pdns.getZoneMetadata(zone.id);
+      const meta = {};
+      (metaList || []).forEach(m => { meta[m.kind] = m.metadata || []; });
+
+      const soaEditOpts = ['', 'DEFAULT', 'INCREASE', 'EPOCH', 'NOW', 'NONE'];
+      const soaEditSel = (key, cur) => soaEditOpts.map(v =>
+        `<option value="${v}"${cur === v ? ' selected' : ''}>${v || '(server default)'}</option>`
+      ).join('');
+
+      document.getElementById('modal-body').innerHTML = `
+        <form id="meta-form" onsubmit="return false">
+          <div class="mb-3">
+            <label class="form-label fw-medium">ALLOW-AXFR-FROM</label>
+            <textarea class="form-control font-monospace" id="meta-allow-axfr" rows="3"
+              placeholder="AUTO&#10;0.0.0.0/0&#10;::/0">${esc((meta['ALLOW-AXFR-FROM'] || []).join('\n'))}</textarea>
+            <div class="form-text">IP prefixes allowed to AXFR. One per line. Use <code>AUTO</code> to allow from configured masters.</div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-medium">ALSO-NOTIFY</label>
+            <textarea class="form-control font-monospace" id="meta-also-notify" rows="2"
+              placeholder="192.168.1.100&#10;192.168.1.101">${esc((meta['ALSO-NOTIFY'] || []).join('\n'))}</textarea>
+            <div class="form-text">Extra IPs to send NOTIFY to. One per line.</div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-medium">AXFR-SOURCE</label>
+            <input type="text" class="form-control font-monospace" id="meta-axfr-source"
+              value="${esc((meta['AXFR-SOURCE'] || [])[0] || '')}" placeholder="192.168.1.1">
+            <div class="form-text">Source IP address for outgoing AXFR requests.</div>
+          </div>
+          <div class="row mb-3">
+            <div class="col-sm-6">
+              <label class="form-label fw-medium">SOA-EDIT</label>
+              <select class="form-select" id="meta-soa-edit">
+                ${soaEditSel('SOA-EDIT', (meta['SOA-EDIT'] || [])[0] || '')}
+              </select>
+              <div class="form-text">SOA serial modification on zone change.</div>
+            </div>
+            <div class="col-sm-6">
+              <label class="form-label fw-medium">SOA-EDIT-API</label>
+              <select class="form-select" id="meta-soa-edit-api">
+                ${soaEditSel('SOA-EDIT-API', (meta['SOA-EDIT-API'] || [])[0] || '')}
+              </select>
+              <div class="form-text">SOA serial modification on API change.</div>
+            </div>
+          </div>
+        </form>`;
+    } catch (err) {
+      document.getElementById('modal-body').innerHTML =
+        `<div class="alert alert-danger">${esc(err.message)}</div>`;
+    }
+  },
+
+  // === Autoprimaries ===
+  showAutoprimaryCreate() {
+    document.getElementById('modal-title').textContent = 'Add Autoprimary';
+    document.getElementById('modal-body').innerHTML = `
+      <form id="autoprimary-form" onsubmit="return false">
+        <div class="mb-3">
+          <label class="form-label fw-medium">IP Address <span class="text-danger">*</span></label>
+          <input type="text" class="form-control font-monospace" id="ap-ip"
+            placeholder="192.168.1.1" required>
+          <div class="form-text">IP address of the primary server sending NOTIFYs.</div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-medium">Nameserver <span class="text-danger">*</span></label>
+          <input type="text" class="form-control font-monospace" id="ap-ns"
+            placeholder="ns1.example.com." required>
+          <div class="form-text">FQDN matching the NS record in the zone on the primary.</div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-medium">Account</label>
+          <input type="text" class="form-control" id="ap-account" placeholder="optional label">
+          <div class="form-text">Optional label for grouping zones created by this autoprimary.</div>
+        </div>
+      </form>`;
+    document.getElementById('modal-save-btn').textContent = 'Add Autoprimary';
+    document.getElementById('modal-save-btn').onclick = () => saveAutoprimary();
+    new bootstrap.Modal(document.getElementById('app-modal')).show();
+  },
+
+  deleteAutoprimary(idx) {
+    const a = state.autoprimaries[idx];
+    showConfirm(
+      'Delete Autoprimary',
+      `Remove autoprimary <strong>${esc(a.ip)}</strong> / <strong>${esc(a.nameserver)}</strong>?`,
+      async () => {
+        ui.setLoading(true);
+        try {
+          await pdns.deleteAutoprimary(a.ip, a.nameserver);
+          ui.showToast('Autoprimary removed', 'success');
+          navigate('autoprimaries');
+        } catch (err) {
+          ui.showToast(`Delete failed: ${err.message}`, 'danger');
+        } finally { ui.setLoading(false); }
+      }
+    );
+  },
 };
 
 // ---- Export helper -----------------------------------------------
@@ -940,6 +1128,60 @@ function copyExport() {
   navigator.clipboard.writeText(text).then(() => {
     ui.showToast('Copied to clipboard', 'success');
   });
+}
+
+// ---- Zone Metadata save ------------------------------------------
+async function saveZoneMetadata() {
+  const zone = state.currentZone;
+  const fields = [
+    { kind: 'ALLOW-AXFR-FROM', values: () => document.getElementById('meta-allow-axfr').value.split('\n').map(s => s.trim()).filter(Boolean) },
+    { kind: 'ALSO-NOTIFY',     values: () => document.getElementById('meta-also-notify').value.split('\n').map(s => s.trim()).filter(Boolean) },
+    { kind: 'AXFR-SOURCE',     values: () => { const v = document.getElementById('meta-axfr-source').value.trim(); return v ? [v] : []; } },
+    { kind: 'SOA-EDIT',        values: () => { const v = document.getElementById('meta-soa-edit').value; return v ? [v] : []; } },
+    { kind: 'SOA-EDIT-API',    values: () => { const v = document.getElementById('meta-soa-edit-api').value; return v ? [v] : []; } },
+  ];
+
+  ui.setLoading(true);
+  let errors = 0;
+  for (const f of fields) {
+    const values = f.values();
+    try {
+      if (values.length > 0) {
+        await pdns.setZoneMeta(zone.id, f.kind, values);
+      } else {
+        await pdns.deleteZoneMeta(zone.id, f.kind);
+      }
+    } catch {
+      if (values.length > 0) errors++;
+    }
+  }
+  ui.setLoading(false);
+  if (errors > 0) {
+    ui.showToast('Some metadata could not be saved', 'warning');
+  } else {
+    ui.showToast('Metadata saved', 'success');
+    bootstrap.Modal.getInstance(document.getElementById('app-modal')).hide();
+  }
+}
+
+// ---- Autoprimary save --------------------------------------------
+async function saveAutoprimary() {
+  const ip      = document.getElementById('ap-ip').value.trim();
+  const ns      = document.getElementById('ap-ns').value.trim();
+  const account = document.getElementById('ap-account').value.trim();
+
+  if (!ip) { ui.showToast('IP address is required', 'warning'); return; }
+  if (!ns) { ui.showToast('Nameserver is required', 'warning'); return; }
+
+  ui.setLoading(true);
+  try {
+    await pdns.createAutoprimary({ ip, nameserver: fqdn(ns), account });
+    ui.showToast('Autoprimary added', 'success');
+    bootstrap.Modal.getInstance(document.getElementById('app-modal')).hide();
+    navigate('autoprimaries');
+  } catch (err) {
+    ui.showToast(`Error: ${err.message}`, 'danger');
+  } finally { ui.setLoading(false); }
 }
 
 // ---- Zone modal --------------------------------------------------
@@ -1306,12 +1548,13 @@ function navigate(view, param) {
   });
 
   switch (view) {
-    case 'zones':      views.zones();           break;
-    case 'records':    views.records(param);    break;
-    case 'search':     views.search();          break;
-    case 'statistics': views.statistics();      break;
-    case 'settings':   views.settings();        break;
-    default:           views.zones();
+    case 'zones':          views.zones();           break;
+    case 'records':        views.records(param);    break;
+    case 'search':         views.search();          break;
+    case 'statistics':     views.statistics();      break;
+    case 'autoprimaries':  views.autoprimaries();   break;
+    case 'settings':       views.settings();        break;
+    default:               views.zones();
   }
 }
 
