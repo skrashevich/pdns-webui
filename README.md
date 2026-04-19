@@ -1,5 +1,11 @@
 <img width="2007" height="1015" alt="image" src="https://github.com/user-attachments/assets/6c8e402d-9bcb-4d67-a610-0ee5e99b6447" />
 
+<!-- badges:start -->
+[![GitHub stars](https://img.shields.io/github/stars/skrashevich/pdns-webui?style=flat-square)](https://github.com/skrashevich/pdns-webui/stargazers)
+[![Last commit](https://img.shields.io/github/last-commit/skrashevich/pdns-webui?style=flat-square)](https://github.com/skrashevich/pdns-webui/commits/main)
+<!-- badges:end -->
+
+
 
 # PowerDNS Web UI
 
