@@ -1,8 +1,13 @@
 <img width="2007" height="1015" alt="image" src="https://github.com/user-attachments/assets/6c8e402d-9bcb-4d67-a610-0ee5e99b6447" />
 
 <!-- badges:start -->
+[![GitHub release](https://img.shields.io/github/v/release/skrashevich/pdns-webui?style=flat-square&label=release)](https://github.com/skrashevich/pdns-webui/releases)
 [![GitHub stars](https://img.shields.io/github/stars/skrashevich/pdns-webui?style=flat-square)](https://github.com/skrashevich/pdns-webui/stargazers)
+[![GitHub issues](https://img.shields.io/github/issues/skrashevich/pdns-webui?style=flat-square)](https://github.com/skrashevich/pdns-webui/issues)
 [![Last commit](https://img.shields.io/github/last-commit/skrashevich/pdns-webui?style=flat-square)](https://github.com/skrashevich/pdns-webui/commits/main)
+[![Go version](https://img.shields.io/badge/Go-1.26-00ADD8?style=flat-square&logo=go)](https://go.dev)
+[![Docker](https://img.shields.io/badge/Docker-ready-2496ED?style=flat-square&logo=docker&logoColor=white)](https://github.com/skrashevich/pdns-webui/blob/main/Dockerfile)
+[![License](https://img.shields.io/badge/license-No%20license-red?style=flat-square)](https://github.com/skrashevich/pdns-webui)
 <!-- badges:end -->
 
 
@@ -68,7 +73,7 @@ docker compose up -d
 | `PDNS_API_KEY`   | `changeme`                | Must match `api-key` in pdns.conf          |
 | `PDNS_SERVER_ID` | `localhost`               | PowerDNS server ID (almost always default) |
 | `HOST`           | `0.0.0.0`                 | Host/interface the UI listens on           |
-| `PORT`           | `8080`                    | Port the UI listens on                     |
+| `PORT`           | `8080`                    | Port the UI listens on           |
 
 ### CLI flags
 
