@@ -25,7 +25,7 @@ A lightweight web interface for managing **PowerDNS Authoritative Server 4.** vi
 ## Features
 
 - **Zone management** – list, create, edit, delete authoritative zones (Native / Master / Slave)
-- **Record management** – full CRUD for DNS records (A, AAAA, CNAME, MX, NS, TXT, SOA, SRV, PTR, CAA)
+- **Record management** – full CRUD for DNS records (A, AAAA, ALIAS, CNAME, MX, NS, TXT, SOA, SRV, PTR, CAA)
 - **Multi-value records** – multiple A/AAAA/NS/… records for the same name/type
 - **Notify slaves** – send `NOTIFY` to all slave servers with one click
 - **Zone export** – view and copy the raw zone file

@@ -248,7 +248,7 @@ function kindBadge(kind) {
 }
 
 function typeBadge(type) {
-  const known = ['A','AAAA','CNAME','MX','NS','TXT','SOA','SRV','PTR','CAA'];
+  const known = ['A','AAAA','ALIAS','CNAME','MX','NS','TXT','SOA','SRV','PTR','CAA'];
   const cls = known.includes(type) ? `badge-type-${type}` : 'badge-type-other';
   return `<span class="badge-type ${cls}">${esc(type)}</span>`;
 }
@@ -1292,7 +1292,7 @@ async function saveZone(zoneId) {
 }
 
 // ---- Record modal ------------------------------------------------
-const RECORD_TYPES = ['A', 'AAAA', 'CAA', 'CNAME', 'MX', 'NS', 'PTR', 'SOA', 'SRV', 'TXT'];
+const RECORD_TYPES = ['A', 'AAAA', 'ALIAS', 'CAA', 'CNAME', 'MX', 'NS', 'PTR', 'SOA', 'SRV', 'TXT'];
 
 function showRecordModal(rrset) {
   const isEdit = rrset !== null;
@@ -1468,6 +1468,7 @@ function buildRecordContent(type) {
       if (!lines.length) throw new Error('Content is required');
       return lines.map(l => ({ content: l.startsWith('"') ? l : `"${l}"` }));
     }
+    case 'ALIAS':
     case 'CNAME':
     case 'NS':
     case 'PTR': {
