@@ -75,6 +75,17 @@ docker compose up -d
 | `HOST`           | `0.0.0.0`                 | Host/interface the UI listens on           |
 | `PORT`           | `8080`                    | Port the UI listens on           |
 
+### ALIAS records
+
+PowerDNS Authoritative serves `ALIAS` records only when alias expansion is configured. For PowerDNS 5.1, set a resolver that does not point back to the authoritative server itself and enable expansion in `pdns.conf`:
+
+```ini
+resolver=[::1]:5300
+expand-alias=yes
+```
+
+`ALIAS` is intended for the zone apex (`@`) and uses one target name per RRset.
+
 ### CLI flags
 
 - `-host` — host/interface to listen on (default from `HOST` env var)

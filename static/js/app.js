@@ -1415,6 +1415,16 @@ function renderRecordFields(type, rrset) {
         </div>`;
     }
 
+    case 'ALIAS': {
+      return `
+        <div class="mb-3">
+          <label class="form-label">Target <span class="text-danger">*</span></label>
+          <input type="text" class="form-control font-monospace" id="r-alias-target"
+            value="${esc(first)}" placeholder="target.example.net." required>
+          <div class="form-text">PowerDNS 5.1 uses exactly one ALIAS target and synthesizes A/AAAA answers from it.</div>
+        </div>`;
+    }
+
     case 'SOA': {
       return `
         <div class="mb-3">
@@ -1468,7 +1478,12 @@ function buildRecordContent(type) {
       if (!lines.length) throw new Error('Content is required');
       return lines.map(l => ({ content: l.startsWith('"') ? l : `"${l}"` }));
     }
-    case 'ALIAS':
+    case 'ALIAS': {
+      const lines = document.getElementById('r-alias-target').value
+        .split('\n').map(l => l.trim()).filter(Boolean);
+      if (lines.length !== 1) throw new Error('ALIAS supports exactly one target');
+      return [{ content: fqdn(lines[0]) }];
+    }
     case 'CNAME':
     case 'NS':
     case 'PTR': {
@@ -1497,6 +1512,10 @@ async function saveRecord(existingRRset) {
   if (!nameVal) { ui.showToast('Name is required', 'warning'); return; }
 
   const absName = absoluteName(nameVal, zone.name);
+  if (type === 'ALIAS' && absName !== fqdn(zone.name)) {
+    ui.showToast('ALIAS records are supported at the zone apex only; use @ as the record name', 'warning');
+    return;
+  }
 
   let records;
   try {
