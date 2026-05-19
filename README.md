@@ -7,7 +7,7 @@
 [![Last commit](https://img.shields.io/github/last-commit/skrashevich/pdns-webui?style=flat-square)](https://github.com/skrashevich/pdns-webui/commits/main)
 [![Go version](https://img.shields.io/badge/Go-1.26-00ADD8?style=flat-square&logo=go)](https://go.dev)
 [![Docker](https://img.shields.io/badge/Docker-ready-2496ED?style=flat-square&logo=docker&logoColor=white)](https://github.com/skrashevich/pdns-webui/blob/main/Dockerfile)
-[![License](https://img.shields.io/badge/license-No%20license-red?style=flat-square)](https://github.com/skrashevich/pdns-webui)
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue?style=flat-square)](https://github.com/skrashevich/pdns-webui)
 <!-- badges:end -->
 
 
