@@ -1,0 +1,76 @@
+---
+title: "Быстрый старт"
+description: "Запуск PowerDNS Web UI локально или через Docker Compose."
+---
+
+## Предварительные требования
+
+Вам потребуется:
+
+- PowerDNS Authoritative Server с включённым HTTP API
+- API-ключ PowerDNS
+- Go для локальной разработки или Docker для развёртывания в контейнере
+
+## Запуск с Go
+
+Начните с примера конфигурации:
+
+```bash
+cp .env.example .env
+```
+
+Отредактируйте `.env` и задайте как минимум:
+
+```dotenv
+PDNS_API_URL=http://localhost:8081
+PDNS_API_KEY=replace-with-your-api-key
+PDNS_SERVER_ID=localhost
+HOST=0.0.0.0
+PORT=8080
+```
+
+Затем запустите веб-интерфейс:
+
+```bash
+go run .
+```
+
+Откройте `http://localhost:8080`.
+
+## Переопределение адреса прослушивания
+
+Используйте флаги CLI, если нужно, чтобы процесс слушал на адресе, отличном от
+значений в `.env`:
+
+```bash
+go run . -host 127.0.0.1 -port 8080
+```
+
+## Запуск с Docker Compose
+
+Скопируйте `.env.example` в `.env` либо отредактируйте блок environment в
+`docker-compose.yml` напрямую. Главное, чтобы контейнер получил доступный
+`PDNS_API_URL` и корректный `PDNS_API_KEY`.
+
+Пример:
+
+```yaml
+services:
+  pdns-webui:
+    image: ghcr.io/skrashevich/pdns-webui:latest
+    ports:
+      - "8080:8080"
+    environment:
+      PDNS_API_URL: http://pdns:8081
+      PDNS_API_KEY: changeme
+      PDNS_SERVER_ID: localhost
+      PORT: "8080"
+```
+
+Затем запустите:
+
+```bash
+docker compose up -d
+```
+
+Откройте `http://localhost:8080`.
