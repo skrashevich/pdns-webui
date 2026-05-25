@@ -6,9 +6,9 @@
 [![GitHub issues](https://img.shields.io/github/issues/skrashevich/pdns-webui?style=flat-square)](https://github.com/skrashevich/pdns-webui/issues)
 [![Last commit](https://img.shields.io/github/last-commit/skrashevich/pdns-webui?style=flat-square)](https://github.com/skrashevich/pdns-webui/commits/main)
 [![Go version](https://img.shields.io/badge/Go-1.26-00ADD8?style=flat-square&logo=go)](https://go.dev)
-[[![Docker](https://img.shields.io/badge/Docker-ready-2496ED?style=flat-square&logo=docker&logoColor=white)](https://github.com/skrashevich/pdns-webui/blob/main/Dockerfile)
+[![Docker](https://img.shields.io/badge/Docker-ready-2496ED?style=flat-square&logo=docker&logoColor=white)](https://github.com/skrashevich/pdns-webui/blob/main/Dockerfile)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue?style=flat-square)](https://github.com/skrashevich/pdns-webui)
-[![Docs](https://img.shields.io/badge/docs-mintlify-2563EB?style=flat-square&logo=mintlify)](https://skrashevich.github.io/pdns-webui)
+[![Docs](https://img.shields.io/badge/docs-mintlify-2563EB?style=flat-square&logo=mintlify)](https://pdns-webui.mintlify.app)
 <!-- badges:end -->
 
 
@@ -104,6 +104,6 @@ The Go backend acts as an authenticated proxy so the PowerDNS API key is never e
 
 ## Documentation
 
-Full documentation is available at **📖 [pdns-webui docs](https://skrashevich.github.io/pdns-webui)** — covers deployment, configuration, zone and record management, and troubleshooting.
+Full documentation is available at **📖 [pdns-webui docs](https://pdns-webui.mintlify.app)** — covers deployment, configuration, zone and record management, and troubleshooting.
 
 The documentation source lives in [`docs/`](docs/) and is built with [Mintlify](https://mintlify.com/).

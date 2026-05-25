@@ -1,22 +1,15 @@
-name: Deploy Mintlify Docs
+name: Validate Docs
 
 on:
+  pull_request:
+    paths: ['docs/**', 'docs.json']
   push:
     branches: [main]
-    paths: ['docs/**']
+    paths: ['docs/**', 'docs.json']
   workflow_dispatch:
 
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: pages
-  cancel-in-progress: false
-
 jobs:
-  build:
+  validate:
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -27,21 +20,6 @@ jobs:
         with:
           node-version: 20
       - name: Install Mintlify CLI
-        run: npm install -g @mintlify/cli
-      - name: Build static docs
-        run: mintlify build --output ../dist
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: dist
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+        run: npm install -g mint
+      - name: Validate docs
+        run: mint validate
