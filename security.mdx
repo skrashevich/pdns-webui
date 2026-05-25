@@ -1,0 +1,52 @@
+---
+title: "Security"
+description: "How to deploy PowerDNS Web UI without exposing administrative DNS access."
+---
+
+PowerDNS Web UI does not include built-in user accounts, sessions, login forms,
+roles, or permissions.
+
+Anyone who can reach the web UI can manage the configured PowerDNS server.
+
+## Recommended access controls
+
+Use at least one of these controls:
+
+- Bind the web UI to `127.0.0.1` and access it through SSH forwarding
+- Put it behind a VPN or private network
+- Restrict access with firewall rules
+- Put it behind a reverse proxy with authentication
+- Use TLS at the reverse proxy layer for remote access
+
+## Safer local binding
+
+For local-only access:
+
+```dotenv
+HOST=127.0.0.1
+PORT=8080
+```
+
+Then open an SSH tunnel if you need remote access:
+
+```bash
+ssh -L 8080:127.0.0.1:8080 user@server
+```
+
+Open `http://localhost:8080` on your local machine.
+
+## Keep the PowerDNS API private
+
+The PowerDNS HTTP API should not be public either. Keep `webserver-allow-from`
+as narrow as possible in `pdns.conf`, ideally limited to the host or container
+network where PowerDNS Web UI runs.
+
+## Rotate weak defaults
+
+Never deploy with:
+
+```dotenv
+PDNS_API_KEY=changeme
+```
+
+That is a placeholder, not a security strategy.

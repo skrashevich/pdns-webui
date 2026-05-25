@@ -1,0 +1,49 @@
+---
+title: "PowerDNS setup"
+description: "Enable the PowerDNS Authoritative HTTP API for use with PowerDNS Web UI."
+---
+
+PowerDNS Web UI uses the PowerDNS Authoritative HTTP API.
+
+Add or update these settings in `pdns.conf`:
+
+```ini
+webserver=yes
+webserver-port=8081
+webserver-allow-from=127.0.0.1,::1
+api=yes
+api-key=replace-with-a-long-secret
+```
+
+Restart PowerDNS after changing the configuration.
+
+## Allow the web UI host
+
+If PowerDNS Web UI runs on another host or in another container, include that
+address or network in `webserver-allow-from`.
+
+Example for a Docker network:
+
+```ini
+webserver-allow-from=127.0.0.1,172.18.0.0/16
+```
+
+Keep this list narrow. The PowerDNS API is administrative.
+
+## Verify the API
+
+From the machine running PowerDNS Web UI:
+
+```bash
+curl -H 'X-API-Key: replace-with-a-long-secret' \
+  http://localhost:8081/api/v1/servers/localhost
+```
+
+If PowerDNS returns server information, configure the same URL and key in
+PowerDNS Web UI:
+
+```dotenv
+PDNS_API_URL=http://localhost:8081
+PDNS_API_KEY=replace-with-a-long-secret
+PDNS_SERVER_ID=localhost
+```

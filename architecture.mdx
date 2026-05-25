@@ -1,0 +1,52 @@
+---
+title: "Architecture"
+description: "How PowerDNS Web UI is structured internally."
+---
+
+PowerDNS Web UI is intentionally small.
+
+```text
+Browser
+  |
+  | fetch()
+  v
+Go HTTP server
+  |
+  | X-API-Key + JSON proxy
+  v
+PowerDNS Authoritative HTTP API
+```
+
+## Backend
+
+The Go server:
+
+- Serves the embedded HTML, CSS, and JavaScript UI
+- Exposes `/api/config` for UI configuration
+- Proxies `/api/pdns/...` requests to `PDNS_API_URL/api/v1/...`
+- Adds the configured `X-API-Key` header
+- Converts PowerDNS responses back to browser-friendly JSON
+
+## Frontend
+
+The browser app is a static single-page application under `static/`.
+
+It handles:
+
+- Zone list and zone detail views
+- Record editing forms
+- Metadata forms
+- Autoprimary management
+- Theme selection
+- Toast notifications and confirmations
+
+## Embedded assets
+
+The server embeds `templates/` and `static/` at build time with Go `embed`.
+
+That means the final binary can run without a separate asset directory.
+
+## Container image
+
+The Dockerfile builds a static Go binary in an Alpine builder stage, then copies
+it into a distroless runtime image.

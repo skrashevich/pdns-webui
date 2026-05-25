@@ -1,0 +1,40 @@
+---
+title: "Introduction"
+description: "A lightweight web interface for managing PowerDNS Authoritative zones and records."
+---
+
+PowerDNS Web UI is a small Go application that serves a browser interface for
+PowerDNS Authoritative Server and proxies requests to the built-in PowerDNS HTTP
+API.
+
+It is built for operators who want a direct, lightweight control panel for DNS
+zones without exposing the PowerDNS API key to the browser.
+
+## What you can manage
+
+- Authoritative zones: list, create, edit, delete, notify slaves, and export zone files
+- DNS records: `A`, `AAAA`, `ALIAS`, `CAA`, `CNAME`, `MX`, `NS`, `PTR`, `SOA`, `SRV`, and `TXT`
+- Multi-value RRsets for records such as `A`, `AAAA`, `NS`, and `TXT`
+- Slave zones, including AXFR retrieval from the configured master
+- Zone metadata such as `ALLOW-AXFR-FROM`, `AXFR-SOURCE`, `SOA-EDIT`, and `SOA-EDIT-API`
+- Autoprimaries for automatic secondary zone provisioning
+
+## How it works
+
+The browser talks only to PowerDNS Web UI. The Go backend adds the configured
+`X-API-Key` header and forwards requests to PowerDNS.
+
+```text
+browser -> PowerDNS Web UI -> PowerDNS HTTP API
+```
+
+The PowerDNS API key stays on the server.
+
+## Important security model
+
+PowerDNS Web UI does not provide its own authentication or authorization.
+
+Run it behind controls you trust: a private network, VPN, firewall rules, or a
+reverse proxy with authentication. Do not expose it directly to the public
+internet unless you enjoy giving strangers administrative DNS buttons. A bold
+strategy, but not a good one.

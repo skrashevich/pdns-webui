@@ -1,0 +1,68 @@
+---
+title: "Troubleshooting"
+description: "Common PowerDNS Web UI deployment and API problems."
+---
+
+## The UI cannot connect to PowerDNS
+
+Check that `PDNS_API_URL` is reachable from the machine or container running
+PowerDNS Web UI.
+
+From that environment:
+
+```bash
+curl -H 'X-API-Key: your-key' \
+  "$PDNS_API_URL/api/v1/servers/$PDNS_SERVER_ID"
+```
+
+If this fails, fix networking, the PowerDNS webserver configuration, or the API
+key before debugging the UI.
+
+## 401 or unauthorized responses
+
+The value of `PDNS_API_KEY` must match `api-key` in `pdns.conf`.
+
+Restart PowerDNS after changing `pdns.conf`.
+
+## 404 for server or zones
+
+Check `PDNS_SERVER_ID`. Most installations use:
+
+```dotenv
+PDNS_SERVER_ID=localhost
+```
+
+If your API exposes a different server ID, use that value.
+
+## Docker cannot reach PowerDNS on localhost
+
+Inside a container, `localhost` means the container itself.
+
+Use a reachable host instead, such as:
+
+```dotenv
+PDNS_API_URL=http://pdns:8081
+```
+
+for another Compose service, or a host bridge address when PowerDNS runs on the
+Docker host.
+
+## ALIAS records do not resolve
+
+Confirm that PowerDNS is configured for ALIAS expansion:
+
+```ini
+resolver=[::1]:5300
+expand-alias=yes
+```
+
+The resolver must not point back to the authoritative server itself.
+
+## Slave zone transfer fails
+
+Check the primary zone metadata and network path:
+
+- `ALLOW-AXFR-FROM` includes the secondary server
+- The primary accepts TCP/53 from the secondary
+- The zone master address is correct
+- Firewalls allow the transfer

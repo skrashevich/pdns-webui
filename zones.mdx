@@ -1,0 +1,51 @@
+---
+title: "Zones"
+description: "Create, edit, delete, notify, export, and transfer PowerDNS zones."
+---
+
+PowerDNS Web UI manages authoritative zones through the PowerDNS API.
+
+## Zone kinds
+
+Supported zone kinds:
+
+- `Native`
+- `Master`
+- `Slave`
+
+Use `Native` for regular standalone authoritative zones. Use `Master` and
+`Slave` when you operate primary and secondary DNS topology.
+
+## Create a zone
+
+When creating a zone, use a fully qualified zone name:
+
+```text
+example.com.
+```
+
+The trailing dot matters. It keeps the name absolute and avoids ambiguity.
+
+## Notify slaves
+
+For master zones, use notify to ask configured slave servers to refresh their
+copy of the zone.
+
+This maps to the PowerDNS zone notify endpoint.
+
+## Export a zone
+
+Zone export shows the raw zone file returned by PowerDNS. Use it when you need
+to inspect generated records, copy a zone, or audit what PowerDNS will serve.
+
+## Retrieve a slave zone
+
+For slave zones, AXFR retrieval asks PowerDNS to transfer the zone from its
+configured master.
+
+If retrieval fails, check:
+
+- The master address configured for the zone
+- `ALLOW-AXFR-FROM` metadata on the master
+- Network reachability between secondary and primary
+- Firewall rules for TCP/UDP 53

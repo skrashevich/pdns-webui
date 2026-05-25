@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="220" height="44" viewBox="0 0 220 44" role="img" aria-label="PowerDNS Web UI">
+  <rect width="44" height="44" rx="10" fill="#2563eb"/>
+  <path d="M12 29V15h14c5 0 8 3 8 7s-3 7-8 7H12zm6-5h7c2 0 3-1 3-2s-1-2-3-2h-7v4z" fill="#fff"/>
+  <text x="56" y="28" font-family="Inter, Arial, sans-serif" font-size="18" font-weight="700" fill="#111827">PowerDNS Web UI</text>
+</svg>

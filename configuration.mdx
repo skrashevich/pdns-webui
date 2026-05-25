@@ -1,0 +1,59 @@
+---
+title: "Configuration"
+description: "Environment variables and CLI flags supported by PowerDNS Web UI."
+---
+
+PowerDNS Web UI reads configuration from environment variables and an optional
+`.env` file in the working directory.
+
+CLI flags can override the listen host and port.
+
+## Environment variables
+
+| Variable | Default | Description |
+| --- | --- | --- |
+| `PDNS_API_URL` | `http://localhost:8081` | Base URL of the PowerDNS Authoritative HTTP API |
+| `PDNS_API_KEY` | `changeme` | API key sent to PowerDNS as `X-API-Key` |
+| `PDNS_SERVER_ID` | `localhost` | PowerDNS server ID used in API paths |
+| `HOST` | `0.0.0.0` | Interface the web UI listens on |
+| `PORT` | `8080` | Port the web UI listens on |
+
+## Example `.env`
+
+```dotenv
+PDNS_API_URL=http://127.0.0.1:8081
+PDNS_API_KEY=replace-with-your-api-key
+PDNS_SERVER_ID=localhost
+HOST=127.0.0.1
+PORT=8080
+```
+
+## CLI flags
+
+| Flag | Description |
+| --- | --- |
+| `-host` | Host or interface to listen on |
+| `-port` | Port to listen on |
+| `-h` | Print help |
+
+Example:
+
+```bash
+pdns-webui -host 127.0.0.1 -port 8080
+```
+
+## PowerDNS server ID
+
+Most PowerDNS installations use `localhost` as the server ID. If your PowerDNS
+API uses a different server ID, set `PDNS_SERVER_ID` to match it.
+
+## Debug flag
+
+`.env.example` also includes:
+
+```dotenv
+DEBUG=false
+```
+
+The current server code does not consume `DEBUG`. Treat it as reserved for
+development tooling rather than an application feature switch.

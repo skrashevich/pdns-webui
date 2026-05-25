@@ -1,0 +1,60 @@
+---
+title: "Zone metadata"
+description: "Manage PowerDNS zone metadata and autoprimaries."
+---
+
+PowerDNS zone metadata controls behavior that is not represented by ordinary
+DNS records.
+
+PowerDNS Web UI exposes common metadata used for zone transfers and SOA serial
+handling.
+
+## Supported metadata
+
+| Metadata | Purpose |
+| --- | --- |
+| `ALLOW-AXFR-FROM` | IP addresses or ranges allowed to AXFR this zone |
+| `ALSO-NOTIFY` | Extra nameservers or IPs to notify after zone changes |
+| `AXFR-SOURCE` | Source address PowerDNS uses for outgoing AXFR requests |
+| `SOA-EDIT` | SOA serial modification policy for zone changes |
+| `SOA-EDIT-API` | SOA serial modification policy for API changes |
+
+## ALLOW-AXFR-FROM
+
+Use `ALLOW-AXFR-FROM` on a primary zone to permit secondaries to transfer it.
+
+Example values:
+
+```text
+192.0.2.10
+2001:db8::10
+```
+
+## SOA serial behavior
+
+`SOA-EDIT` and `SOA-EDIT-API` control how PowerDNS adjusts SOA serial numbers
+after zone changes.
+
+Choose a policy that matches your operational model. If your secondaries depend
+on serial increases, make sure API edits update the serial consistently.
+
+## ALSO-NOTIFY
+
+Use `ALSO-NOTIFY` when you want PowerDNS to send notifications to additional
+secondaries beyond the default NS-derived targets.
+
+Enter one destination per line, for example:
+
+```text
+192.0.2.53
+2001:db8::53
+ns-secondary.example.net
+```
+
+## Autoprimaries
+
+Autoprimaries let PowerDNS automatically provision secondary zones when a
+trusted primary sends a notification.
+
+PowerDNS Web UI can list, create, and delete autoprimary entries through the
+PowerDNS API.

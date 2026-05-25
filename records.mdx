@@ -1,0 +1,83 @@
+---
+title: "Records"
+description: "Manage DNS RRsets and supported record types."
+---
+
+PowerDNS Web UI edits records as PowerDNS RRsets.
+
+An RRset is the combination of record name, type, TTL, and one or more values.
+
+## Supported types
+
+Supported record types:
+
+- `A`
+- `AAAA`
+- `ALIAS`
+- `CAA`
+- `CNAME`
+- `MX`
+- `NS`
+- `PTR`
+- `SOA`
+- `SRV`
+- `TXT`
+
+## Multi-value records
+
+For record types that commonly have several values, add each value as part of
+the same RRset instead of creating duplicate name/type rows.
+
+Examples:
+
+- Multiple `A` records for round-robin IPv4 answers
+- Multiple `AAAA` records for IPv6 answers
+- Multiple `NS` records for delegation
+- Multiple `TXT` strings for verification records
+
+## Relative and absolute names
+
+Use `@` for the zone apex.
+
+Use a relative name such as `www` for a record under the current zone. The UI
+will resolve it against the zone name.
+
+Use a trailing dot for a fully qualified name:
+
+```text
+target.example.net.
+```
+
+## ALIAS records
+
+PowerDNS Authoritative serves `ALIAS` records only when alias expansion is
+configured.
+
+For PowerDNS 5.1, configure a resolver that does not point back to the
+authoritative server itself:
+
+```ini
+resolver=[::1]:5300
+expand-alias=yes
+```
+
+PowerDNS Web UI treats `ALIAS` as an apex-only record and accepts exactly one
+target per RRset.
+
+Use:
+
+```text
+@
+```
+
+as the record name, and one fully qualified target:
+
+```text
+target.example.net.
+```
+
+## SOA records
+
+The UI displays SOA records, but they are special records controlled by
+PowerDNS zone behavior. For serial update behavior, use zone metadata such as
+`SOA-EDIT` and `SOA-EDIT-API`.
