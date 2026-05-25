@@ -9,31 +9,67 @@
   },
   "favicon": "favicon.svg",
   "navigation": {
-    "groups": [
+    "languages": [
       {
-        "group": "Get started",
-        "pages": [
-          "introduction",
-          "quickstart",
-          "configuration",
-          "security"
+        "language": "en",
+        "groups": [
+          {
+            "group": "Get started",
+            "pages": [
+              "introduction",
+              "quickstart",
+              "configuration",
+              "security"
+            ]
+          },
+          {
+            "group": "Operate",
+            "pages": [
+              "powerdns-setup",
+              "docker",
+              "zones",
+              "records",
+              "metadata"
+            ]
+          },
+          {
+            "group": "Reference",
+            "pages": [
+              "architecture",
+              "troubleshooting"
+            ]
+          }
         ]
       },
       {
-        "group": "Operate",
-        "pages": [
-          "powerdns-setup",
-          "docker",
-          "zones",
-          "records",
-          "metadata"
-        ]
-      },
-      {
-        "group": "Reference",
-        "pages": [
-          "architecture",
-          "troubleshooting"
+        "language": "ru",
+        "groups": [
+          {
+            "group": "Начало работы",
+            "pages": [
+              "ru/introduction",
+              "ru/quickstart",
+              "ru/configuration",
+              "ru/security"
+            ]
+          },
+          {
+            "group": "Эксплуатация",
+            "pages": [
+              "ru/powerdns-setup",
+              "ru/docker",
+              "ru/zones",
+              "ru/records",
+              "ru/metadata"
+            ]
+          },
+          {
+            "group": "Справочник",
+            "pages": [
+              "ru/architecture",
+              "ru/troubleshooting"
+            ]
+          }
         ]
       }
     ]

@@ -1,0 +1,52 @@
+---
+title: "Docker"
+description: "Запуск PowerDNS Web UI из опубликованного образа контейнера."
+---
+
+Опубликованный образ:
+
+```text
+ghcr.io/skrashevich/pdns-webui:latest
+```
+
+## Docker Compose
+
+```yaml
+services:
+  pdns-webui:
+    image: ghcr.io/skrashevich/pdns-webui:latest
+    ports:
+      - "8080:8080"
+    environment:
+      PDNS_API_URL: http://pdns:8081
+      PDNS_API_KEY: replace-with-your-api-key
+      PDNS_SERVER_ID: localhost
+      PORT: "8080"
+    restart: unless-stopped
+```
+
+Запустите:
+
+```bash
+docker compose up -d
+```
+
+## Сеть контейнера
+
+Задайте `PDNS_API_URL` так, чтобы адрес был доступен изнутри контейнера.
+
+Типичные значения:
+
+- `http://pdns:8081`, когда PowerDNS — это другой сервис в том же проекте Compose
+- `http://host.docker.internal:8081`, когда PowerDNS работает на хосте Docker и ваша платформа поддерживает это имя
+- `http://172.17.0.1:8081` для стандартного адреса хоста в Linux bridge
+
+## Локальная сборка
+
+```bash
+docker build -t pdns-webui .
+docker run --rm -p 8080:8080 \
+  -e PDNS_API_URL=http://host.docker.internal:8081 \
+  -e PDNS_API_KEY=replace-with-your-api-key \
+  pdns-webui
+```
